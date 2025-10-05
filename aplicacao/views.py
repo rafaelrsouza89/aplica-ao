@@ -13,6 +13,8 @@ import io
 import pandas as pd
 import matplotlib.pyplot as plt
 from .models import Avaliacao 
+import urllib, base64
+from django.shortcuts import render
 
 
 def index(request):
@@ -196,6 +198,115 @@ def evolucacao_ao_longo_do_tempo():
    
    
 def preco_vs_notas():
+
+    def get_dataframe():
+
+    avaliacoes = Avaliacao.objects.all().values()
+    df = pd.DataFrame(list(avaliacoes))
+    return df
+
+def plot_to_base64(fig):
+    """Converte uma figura Matplotlib para uma string base64 para ser usada no HTML."""
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    string = base64.b64encode(buf.read())
+    return urllib.parse.quote(string)
+
+# --- Views de Análise ---
+
+def usuarios_mais_ativos_view(request):
+    """ANÁLISE 1: Identifica e visualiza os 15 usuários que mais publicaram avaliações."""
+    df = get_dataframe()
+    df_filtered = df.dropna(subset=['profile_name'])
+    top_15_usuarios = df_filtered['profile_name'].value_counts().nlargest(15)
+    
+    plt.figure(figsize=(12, 8))
+    top_15_usuarios.sort_values().plot(kind='barh', color='skyblue')
+    plt.title('Top 15 Usuários Mais Ativos')
+    plt.xlabel('Número de Avaliações')
+    plt.ylabel('Usuário')
+    plt.tight_layout()
+    
+    grafico = plot_to_base64(plt.gcf())
+    plt.close()
+    
+    context = {'grafico_usuarios_ativos': grafico}
+    return render(request, 'aplicacao/dashboard_analise.html', context)
+
+def evolucao_reviews_view(request):
+    """ANÁLISE 2: Visualiza a quantidade de avaliações de livros por ano."""
+    df = get_dataframe()
+    df['data_review'] = pd.to_datetime(df['review_time'], unit='s')
+    df['ano'] = df['data_review'].dt.year
+    reviews_por_ano = df['ano'].value_counts().sort_index()
+    
+    plt.figure(figsize=(10, 6))
+    reviews_por_ano.plot(kind='line', marker='o', color='green')
+    plt.title('Evolução do Número de Avaliações por Ano')
+    plt.xlabel('Ano')
+    plt.ylabel('Quantidade de Avaliações')
+    plt.grid(True, linestyle='--')
+    plt.tight_layout()
+    
+    grafico = plot_to_base64(plt.gcf())
+    plt.close()
+    
+    context = {'grafico_evolucao_reviews': grafico}
+    return render(request, 'aplicacao/dashboard_analise.html', context)
+
+def preco_vs_score_view(request):
+    """ANÁLISE 3: Investiga a correlação entre o preço do livro e a nota da avaliação."""
+    df = get_dataframe()
+    df_filtered = df[(df['price'] > 0) & (df['price'] < 100)]
+    df_sample = df_filtered.sample(n=min(1000, len(df_filtered)), random_state=42)
+    
+    plt.figure(figsize=(10, 6))
+    plt.scatter(df_sample['price'], df_sample['review_score'], alpha=0.3)
+    plt.title('Correlação entre Preço e Nota da Avaliação (Amostra)')
+    plt.xlabel('Preço (Price)')
+    plt.ylabel('Nota (Score)')
+    plt.grid(True, linestyle='--')
+    plt.tight_layout()
+    
+    grafico = plot_to_base64(plt.gcf())
+    plt.close()
+    
+    context = {'grafico_preco_score': grafico}
+    return render(request, 'aplicacao/dashboard_analise.html', context)
+
+def sentimento_reviews_view(request):
+    """ANÁLISE 4: Realiza uma análise de sentimento básica sobre os sumários das avaliações."""
+    df = get_dataframe()
+    palavras_positivas = ['good', 'great', 'excellent', 'love', 'amazing', 'best', 'recommend']
+    palavras_negativas = ['bad', 'terrible', 'disappointing', 'not good', 'waste', 'awful']
+
+    def classificar_sentimento(texto):
+        if any(palavra in texto for palavra in palavras_positivas): return 'Positivo'
+        if any(palavra in texto for palavra in palavras_negativas): return 'Negativo'
+        return 'Neutro'
+
+    df['sentimento'] = df['review_summary'].fillna('').str.lower().apply(classificar_sentimento)
+    contagem_sentimentos = df['sentimento'].value_counts()
+    
+    plt.figure(figsize=(8, 8))
+    contagem_sentimentos.plot(kind='pie', autopct='%1.1f%%', colors=['lightgreen', 'lightcoral', 'lightskyblue'])
+    plt.title('Distribuição de Sentimentos nos Sumários das Avaliações')
+    plt.ylabel('')
+    
+    grafico = plot_to_base64(plt.gcf())
+    plt.close()
+    
+    context = {'grafico_sentimento': grafico}
+    return render(request, 'aplicacao/dashboard_analise.html', context)
+    
+def dashboard_completo_view(request):
+    """View que reúne todos os gráficos em uma única página."""
+    # Como gerar cada gráfico e adicioná-lo ao contexto levaria tempo,
+    # esta view pode servir como um exemplo de como combinar contextos.
+    # Por ora, vamos criar links para cada análise separada.
+    context = {}
+    return render(request, 'aplicacao/dashboard_completo.html', context)
     
     
     pass
