@@ -1,5 +1,5 @@
 from django import forms
-from .models import Cliente, Perfil
+from models import Cliente, Perfil
 
 class ClienteForm(forms.ModelForm):
     class Meta:
@@ -10,4 +10,3 @@ class PerfilForm(forms.ModelForm):
     class Meta:
         model = Perfil
         fields = ('telefone', 'rua', 'numero', 'cep', 'bairro', 'cidade', 'complemento')
-        
