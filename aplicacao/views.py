@@ -199,4 +199,3 @@ def preco_vs_notas():
     
     
     pass
-
