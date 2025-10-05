@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Análise de Dados</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; text-align: center; }
+        .chart-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; display: inline-block; margin-top: 20px; }
+        img { max-width: 100%; height: auto; }
+        a { font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <h1>Visualização da Análise</h1>
+    <div class="chart-card">
+        {% if grafico_usuarios_ativos %}
+            <img src="data:image/png;base64,{{ grafico_usuarios_ativos }}" alt="Gráfico de Usuários Mais Ativos">
+        {% elif grafico_evolucao_reviews %}
+            <img src="data:image/png;base64,{{ grafico_evolucao_reviews }}" alt="Gráfico de Evolução das Avaliações">
+        {% elif grafico_preco_score %}
+            <img src="data:image/png;base64,{{ grafico_preco_score }}" alt="Gráfico de Preço vs. Score">
+        {% elif grafico_sentimento %}
+            <img src="data:image/png;base64,{{ grafico_sentimento }}" alt="Gráfico de Análise de Sentimento">
+        {% else %}
+            <p>Nenhum gráfico para exibir.</p>
+        {% endif %}
+    </div>
+    <br><br>
+    <a href="{% url 'dashboard_completo' %}">Voltar para a página de análises</a>
+</body>
+</html>
