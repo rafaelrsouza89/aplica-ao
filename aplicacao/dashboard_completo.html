@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Análises</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; }
+        h1 { text-align: center; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 15px 0; }
+        a { text-decoration: none; font-size: 1.5em; color: #007bff; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard de Análise de Avaliações de Livros</h1>
+    <ul>
+        <li><a href="{% url 'analise_usuarios_ativos' %}">Análise 1: Top 15 Usuários Mais Ativos</a></li>
+        <li><a href="{% url 'analise_evolucao_reviews' %}">Análise 2: Evolução das Avaliações por Ano</a></li>
+        <li><a href="{% url 'analise_preco_score' %}">Análise 3: Correlação entre Preço e Nota</a></li>
+        <li><a href="{% url 'analise_sentimento' %}">Análise 4: Análise de Sentimento dos Sumários</a></li>
+    </ul>
+</body>
+</html>
