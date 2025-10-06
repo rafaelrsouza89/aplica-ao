@@ -173,6 +173,7 @@ def lista_vendas(request):
 
     # Gera os gráficos das análises
     df = get_dataframe()
+    print(df)
 
     # Gráfico 1: Top 15 Usuários Mais Ativos
     grafico_usuarios_ativos = None
