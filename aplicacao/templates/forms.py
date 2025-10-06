@@ -1,5 +1,5 @@
 from django import forms
-from .models import Cliente, Perfil
+from aplicacao.models import Cliente, Perfil
 
 class ClienteForm(forms.ModelForm):
     class Meta:

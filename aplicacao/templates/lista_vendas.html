@@ -39,5 +39,25 @@
         </tbody>
     </table>
 </div>
+
+<div class="container my-4">
+    <h2>Análises de Avaliações</h2>
+    {% if grafico_usuarios_ativos %}
+        <h4>Top 15 Usuários Mais Ativos</h4>
+        <img src="data:image/png;base64,{{ grafico_usuarios_ativos }}" alt="Gráfico de Usuários Mais Ativos" class="img-fluid mb-4">
+    {% endif %}
+    {% if grafico_evolucao_reviews %}
+        <h4>Evolução do Número de Avaliações por Ano</h4>
+        <img src="data:image/png;base64,{{ grafico_evolucao_reviews }}" alt="Gráfico de Evolução das Avaliações" class="img-fluid mb-4">
+    {% endif %}
+    {% if grafico_preco_score %}
+        <h4>Correlação entre Preço e Nota da Avaliação</h4>
+        <img src="data:image/png;base64,{{ grafico_preco_score }}" alt="Gráfico de Preço vs. Score" class="img-fluid mb-4">
+    {% endif %}
+    {% if grafico_sentimento %}
+        <h4>Distribuição de Sentimentos nos Sumários das Avaliações</h4>
+        <img src="data:image/png;base64,{{ grafico_sentimento }}" alt="Gráfico de Análise de Sentimento" class="img-fluid mb-4">
+    {% endif %}
+</div>
 </body>
 </html>

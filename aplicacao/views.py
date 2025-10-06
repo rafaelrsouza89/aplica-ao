@@ -1,12 +1,13 @@
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
+
+from aplicacao.templates.forms import ClienteForm, PerfilForm
 from .models import Produto, Cliente, Venda, ItemVenda
 from django.http.response import HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import ClienteForm, PerfilForm
 from django.utils import timezone
 from decimal import Decimal
 import io
@@ -169,8 +170,79 @@ def registrar_venda(request):
 @login_required(login_url="url_entrar")
 def lista_vendas(request):
     vendas = Venda.objects.all().order_by('-data_venda')
+
+    # Gera os gráficos das análises
+    df = get_dataframe()
+
+    # Gráfico 1: Top 15 Usuários Mais Ativos
+    grafico_usuarios_ativos = None
+    if not df.empty and 'profile_name' in df.columns:
+        top_15_usuarios = df.dropna(subset=['profile_name'])['profile_name'].value_counts().nlargest(15)
+        plt.figure(figsize=(12, 8))
+        top_15_usuarios.sort_values().plot(kind='barh', color='skyblue')
+        plt.title('Top 15 Usuários Mais Ativos')
+        plt.xlabel('Número de Avaliações')
+        plt.ylabel('Usuário')
+        plt.tight_layout()
+        grafico_usuarios_ativos = plot_to_base64(plt.gcf())
+        plt.close()
+
+    # Gráfico 2: Evolução das Avaliações por Ano
+    grafico_evolucao_reviews = None
+    if not df.empty and 'review_time' in df.columns:
+        df['data_review'] = pd.to_datetime(df['review_time'], unit='s')
+        df['ano'] = df['data_review'].dt.year
+        reviews_por_ano = df['ano'].value_counts().sort_index()
+        plt.figure(figsize=(10, 6))
+        reviews_por_ano.plot(kind='line', marker='o', color='green')
+        plt.title('Evolução do Número de Avaliações por Ano')
+        plt.xlabel('Ano')
+        plt.ylabel('Quantidade de Avaliações')
+        plt.grid(True, linestyle='--')
+        plt.tight_layout()
+        grafico_evolucao_reviews = plot_to_base64(plt.gcf())
+        plt.close()
+
+    # Gráfico 3: Preço vs Score
+    grafico_preco_score = None
+    if not df.empty and 'price' in df.columns and 'review_score' in df.columns:
+        df_filtered = df[(df['price'] > 0) & (df['price'] < 100)]
+        if not df_filtered.empty:
+            df_sample = df_filtered.sample(n=min(1000, len(df_filtered)), random_state=42)
+            plt.figure(figsize=(10, 6))
+            plt.scatter(df_sample['price'], df_sample['review_score'], alpha=0.3)
+            plt.title('Correlação entre Preço e Nota da Avaliação (Amostra)')
+            plt.xlabel('Preço (Price)')
+            plt.ylabel('Nota (Score)')
+            plt.grid(True, linestyle='--')
+            plt.tight_layout()
+            grafico_preco_score = plot_to_base64(plt.gcf())
+            plt.close()
+
+    # Gráfico 4: Sentimento dos Sumários
+    grafico_sentimento = None
+    if not df.empty and 'review_summary' in df.columns:
+        palavras_positivas = ['good', 'great', 'excellent', 'love', 'amazing', 'best', 'recommend']
+        palavras_negativas = ['bad', 'terrible', 'disappointing', 'not good', 'waste', 'awful']
+        def classificar_sentimento(texto):
+            if any(palavra in texto for palavra in palavras_positivas): return 'Positivo'
+            if any(palavra in texto for palavra in palavras_negativas): return 'Negativo'
+            return 'Neutro'
+        df['sentimento'] = df['review_summary'].fillna('').str.lower().apply(classificar_sentimento)
+        contagem_sentimentos = df['sentimento'].value_counts()
+        plt.figure(figsize=(8, 8))
+        contagem_sentimentos.plot(kind='pie', autopct='%1.1f%%', colors=['lightgreen', 'lightcoral', 'lightskyblue'])
+        plt.title('Distribuição de Sentimentos nos Sumários das Avaliações')
+        plt.ylabel('')
+        grafico_sentimento = plot_to_base64(plt.gcf())
+        plt.close()
+
     context = {
-        'vendas': vendas
+        'vendas': vendas,
+        'grafico_usuarios_ativos': grafico_usuarios_ativos,
+        'grafico_evolucao_reviews': grafico_evolucao_reviews,
+        'grafico_preco_score': grafico_preco_score,
+        'grafico_sentimento': grafico_sentimento,
     }
     return render(request, 'lista_vendas.html', context)
 
@@ -179,6 +251,7 @@ def get_dataframe():
     df = pd.DataFrame(list(avaliacoes))
     return df
 def plot_to_base64(fig):
+    buf = io.BytesIO()
     fig.savefig(buf, format='png')
     buf.seek(0)
     string = base64.b64encode(buf.read())
@@ -193,17 +266,17 @@ def usuarios_mais_ativos(df):
     plt.tight_layout() 
     plt.show()
 def evolucacao_ao_longo_do_tempo():
-   df['data_review'] = pd.to_datetime(df['review_time'], unit='s')
-   df['ano'] = df['data_review'].dt.year
+    df = get_dataframe()
+    df['data_review'] = pd.to_datetime(df['review_time'], unit='s')
+    df['ano'] = df['data_review'].dt.year
    
    
 def preco_vs_notas():
 
     def get_dataframe():
-
-    avaliacoes = Avaliacao.objects.all().values()
-    df = pd.DataFrame(list(avaliacoes))
-    return df
+        avaliacoes = Avaliacao.objects.all().values()
+        df = pd.DataFrame(list(avaliacoes))
+        return df
 
 def plot_to_base64(fig):
     """Converte uma figura Matplotlib para uma string base64 para ser usada no HTML."""
